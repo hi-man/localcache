@@ -11,7 +11,7 @@ final class LocalCacheTest extends TestCase
     protected function setUp()
     {
         $this->localcache = new LocalCache(
-            '127.0.0.1',
+            'localhost',
             'yacPrefixTesting',
             6379,
             3,
