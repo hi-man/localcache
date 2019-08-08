@@ -19,10 +19,11 @@ matrix:
 
 before_script:
   - pecl channel-update pecl.php.net
-  - pecl install redis-5.0.0
-  - pecl install yac-2.0.2
+  - echo '' | pecl install redis-5.0.0
+  - echo '' | pecl install yac-2.0.2
   - echo "extension = redis.so" >> ~/.phpenv/versions/$(phpenv version-name)/etc/php.ini
   - echo "extension = yac.so" >> ~/.phpenv/versions/$(phpenv version-name)/etc/php.ini
+  - echo "yac.enable_cli = 1" >> ~/.phpenv/versions/$(phpenv version-name)/etc/php.ini
   - if [ "$deps" == "low" ]; then composer update --prefer-dist --prefer-lowest --prefer-stable; fi
   - if [ "$deps" != "low" ]; then composer install --prefer-dist; fi
 
