@@ -1,7 +1,6 @@
 language: php
 
 sudo: false
-dist: trusty
 
 php:
   - 7.1
@@ -20,6 +19,8 @@ matrix:
     fast_finish: true
 
 before_script:
+  - pecl install redis-5.0.0
+  - pecl install yac-2.0.2
   - echo "extension = redis.so" >> ~/.phpenv/versions/$(phpenv version-name)/etc/php.ini
   - echo "extension = yac.so" >> ~/.phpenv/versions/$(phpenv version-name)/etc/php.ini
   - if [ "$deps" == "low" ]; then composer update --prefer-dist --prefer-lowest --prefer-stable; fi
