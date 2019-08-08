@@ -22,8 +22,8 @@ matrix:
 
 before_script:
   - pecl channel-update pecl.php.net
-  - echo '' | pecl install redis-4.0.0
-  - echo '' | pecl install yac-2.0.2
+  - echo '' | pecl install -f redis-4.0.0
+  - echo '' | pecl install -f yac-2.0.2
   - echo "extension = redis.so" >> ~/.phpenv/versions/$(phpenv version-name)/etc/php.ini
   - echo "extension = yac.so" >> ~/.phpenv/versions/$(phpenv version-name)/etc/php.ini
   - echo "yac.enable_cli = 1" >> ~/.phpenv/versions/$(phpenv version-name)/etc/php.ini
