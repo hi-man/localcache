@@ -1,0 +1,27 @@
+{
+  "name": "hi-man/localcache",
+  "description": "provides a cache with local and remote cache",
+  "type": "library",
+  "require": {
+    "php": ">=7.0.0",
+    "psr/simple-cache": "^1.0",
+    "ext-yac": ">=2.0.0",
+    "ext-redis": ">=4.0.0"
+  },
+  "require-dev": {
+    "phpunit/phpunit": "^7.5"
+  },
+  "license": "MIT",
+  "authors": [
+    {
+      "name": "Tinggong",
+      "email": "wangtinggong@gamil.com"
+    }
+  ],
+  "autoload": {
+    "psr-4": {
+      "LocalCache\\": "src/",
+      "Tests\\": "tests/"
+    }
+  }
+}
