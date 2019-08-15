@@ -15,6 +15,36 @@ so, if your redis server is busying, and your data does not change frequently,
 
 thanks to [phpredis](https://github.com/phpredis/phpredis) and [yac](https://github.com/laruence/yac)
 
+<!-- vim-markdown-toc GFM -->
+
+* [Requirement](#requirement)
+* [Install](#install)
+* [testing](#testing)
+* [Classes](#classes)
+    * [CachePoolService](#cachepoolservice)
+        * [initCacheInstance](#initcacheinstance)
+        * [getCacheInstance](#getcacheinstance)
+        * [setCacheValue](#setcachevalue)
+        * [getCacheValue](#getcachevalue)
+        * [deleteByKey](#deletebykey)
+    * [CacheService](#cacheservice)
+        * [getConfigByConnection](#getconfigbyconnection)
+        * [setCacheValue](#setcachevalue-1)
+        * [getCacheValue](#getcachevalue-1)
+        * [deleteByKey](#deletebykey-1)
+    * [LocalCache](#localcache)
+        * [Construct](#construct)
+        * [select](#select)
+        * [get](#get)
+        * [set](#set)
+        * [delete](#delete)
+        * [expire](#expire)
+        * [clear](#clear)
+        * [setLocalCacheTimeout](#setlocalcachetimeout)
+        * [getLocalCacheTimeout](#getlocalcachetimeout)
+
+<!-- vim-markdown-toc -->
+
 # Requirement
 
 - PHP 7.0+
@@ -33,9 +63,57 @@ composer require 'hi-man/localcache'
 ./vendor/bin/phpunit
 ```
 
-# Methods
+# Classes
 
-## Construct
+## CachePoolService
+
+pool of `LocalCache`, can be called statically
+
+### initCacheInstance
+
+initialize `LocalCache`
+
+### getCacheInstance
+
+get instance of `LocalCache` by connection name
+
+### setCacheValue
+
+set cache value
+
+### getCacheValue
+
+get cache value
+
+### deleteByKey
+
+delete from cache by key
+
+## CacheService
+
+abstract class to use CachePoolService more productive
+
+### getConfigByConnection
+
+get redis configuration by connection identifier
+
+### setCacheValue
+
+wrapper of `CachePoolService::setCacheValue`
+
+### getCacheValue
+
+wrapper of `CachePoolService::getCacheValue`
+
+### deleteByKey
+
+wrapper of `CachePoolService::deleteByKey`
+
+## LocalCache
+
+provide a local cache between application and redis server
+
+### Construct
 
 ```php
 $lc = new LocalCache(
@@ -50,7 +128,7 @@ $lc = new LocalCache(
 );
 ```
 
-## select
+### select
 
 the same as redis command `select`, but not really issue a command request.
 
@@ -61,7 +139,7 @@ $lc->select(
 
 ```
 
-## get
+### get
 
 the same as redis command `get`, use yac cache value first, then issue a command request if cache is missing.
 
@@ -73,7 +151,7 @@ $lc->get(
 
 ```
 
-## set
+### set
 
 the same as redis command `set`, reset yac cache value
 
@@ -87,7 +165,7 @@ $lc->set(
 
 ```
 
-## delete
+### delete
 
 the same as redis command `delete`, also delete yac cache
 
@@ -98,7 +176,7 @@ $lc->delete(
 
 ```
 
-## expire
+### expire
 
 the same as redis command `expire`, also reset yac cache expire time
 
@@ -110,7 +188,7 @@ $lc->expire(
 
 ```
 
-## clear
+### clear
 
 the same as redis command `flushdb`, but flush **all** yac cache
 
@@ -119,7 +197,7 @@ $lc->clear();
 
 ```
 
-## setLocalCacheTimeout
+### setLocalCacheTimeout
 
 set yac cache timeout, **set the right value for your scenario**.
 cache invalidation is a big concept to deal with.
@@ -134,7 +212,7 @@ $lc->setLocalCacheTimeout(
 
 ```
 
-## getLocalCacheTimeout
+### getLocalCacheTimeout
 
 get yac cache timeout
 
