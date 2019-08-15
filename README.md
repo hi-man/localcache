@@ -60,7 +60,7 @@ composer require 'hi-man/localcache'
 # testing
 
 ```
-./vendor/bin/phpunit
+composer test
 ```
 
 # Classes
