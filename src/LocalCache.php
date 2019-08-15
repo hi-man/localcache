@@ -15,17 +15,10 @@ class LocalCache implements CacheInterface
     const REDIS_DB_INDEX_MAX = 15;
     // invalid redis database index
     const REDIS_DB_INDEX_INVALID = -1;
-    // max yac prefix len
-    const YAC_PREFIX_MAX_LENGTH = 20;
+    // max yac key len
+    const YAC_KEY_MAX_LENGTH = 48;
     // magic value in localcache
     const NO_DATA_IN_CACHE = 'dvn93j_Ne852_D39dnvbu_A3dfoe';
-
-    /**
-     * redis instance
-     *
-     * Array key is database index
-     */
-    private $instance = [];
 
     /**
      * redis server host
@@ -103,7 +96,7 @@ class LocalCache implements CacheInterface
             || $connTimeout < 0
             || $retryInterval < 0
             || $readTimeout < 0
-            || strlen($yacPrefix) > self::YAC_PREFIX_MAX_LENGTH
+            || strlen($yacPrefix) > self::YAC_KEY_MAX_LENGTH
         ) {
             throw new \InvalidArgumentException('invalid parameter');
         }
@@ -114,7 +107,7 @@ class LocalCache implements CacheInterface
         $this->retryInterval = $retryInterval;
         $this->readTimeout = $readTimeout;
         $this->reserved = $retryInterval > 0 ? null : $reserved;
-        $this->maxRetry = $maxRetry;
+        $this->maxRetry = $maxRetry + 1;
 
         !empty($yacPrefix) && ($this->yac = new \Yac($yacPrefix));
     }
@@ -141,14 +134,6 @@ class LocalCache implements CacheInterface
             return true;
         }
 
-        // 实例不存在则创建
-        $ret = $this->initialize($dbIndex);
-        if (empty($ret)) {
-            throw new \InvalidArgumentException(
-                "redis connection failed: {$this->host} {$this->port}"
-            );
-        }
-
         $this->currentDb = $dbIndex;
         return true;
     }
@@ -171,27 +156,17 @@ class LocalCache implements CacheInterface
             );
         }
 
-        $yacKey = '';
-        if ($this->yac) {
-            $yacKey = $this->getYacKey($key);
-            $ret = $this->yac->get($yacKey);
-            if (!empty($ret)) {
-                return ($ret === self::NO_DATA_IN_CACHE) ? $default : $ret;
-            }
+        $ret = $this->yacGet($key);
+        if (!empty($ret)) {
+            return ($ret === self::NO_DATA_IN_CACHE) ? $default : $ret;
         }
 
         $ret = $this->executeCmd('get', [$key]);
-        if ($this->yac) {
-            if ($ret) {
-                $this->yac->set($yacKey, $ret, $this->localCacheTimeout);
-            } else {
-                $this->yac->set(
-                    $yacKey,
-                    self::NO_DATA_IN_CACHE,
-                    3
-                );
-            }
-        }
+        $this->yac->set(
+            $key,
+            empty($ret) ? self::NO_DATA_IN_CACHE : $ret,
+            $this->localCacheTimeout
+        );
 
         return $ret ?: $default;
     }
@@ -232,19 +207,16 @@ class LocalCache implements CacheInterface
             );
         }
 
-        $yacKey = '';
-        if ($this->yac) {
-            $yacKey = $this->getYacKey($key);
-            $this->yac->delete($yacKey);
-        }
+        $this->yacDelete($key);
 
+        $ret = false;
         if (is_null($ttl) || $ttl <= 0) {
-            return $this->executeCmd('set', [$key, $value]);
+            $ret = $this->executeCmd('set', [$key, $value]);
+        } else {
+            $ret = $this->executeCmd('setex', [$key, $ttl, $value]);
         }
 
-        $ret = $this->executeCmd('setex', [$key, $ttl, $value]);
-        $ret && $this->yac && $this->yac->set($yacKey, $value, $ttl);
-
+        $ret && $this->yacSet($key, $value, intval($ttl));
         return $ret;
     }
 
@@ -263,12 +235,7 @@ class LocalCache implements CacheInterface
             throw new \InvalidArgumentException("invalid parameter, key:{$key}");
         }
 
-        $yacKey = '';
-        if ($this->yac) {
-            $yacKey = $this->getYacKey($key);
-            $this->yac->delete($yacKey);
-        }
-
+        $this->yacDelete($key);
         return $this->executeCmd('delete', [$key]);
     }
 
@@ -279,20 +246,7 @@ class LocalCache implements CacheInterface
         }
 
         $ret = $this->executeCmd('expire', [$key, $seconds]);
-        $yacKey = '';
-        if ($this->yac) {
-            $yacKey = $this->getYacKey($key);
-        }
-
-        if ($ret === false) {
-            $this->yac && $this->yac->delete($key);
-            return false;
-        }
-
-        if ($this->yac) {
-            $value = $this->yac->get($yacKey);
-            $this->yac->set($yacKey, $value, $seconds);
-        }
+        $ret && $this->yacExpire($key, $seconds);
 
         return $ret;
     }
@@ -422,7 +376,6 @@ class LocalCache implements CacheInterface
                     usleep($this->retryInterval);
                 }
 
-                $exception = $e;
                 continue;
             }
 
@@ -441,9 +394,7 @@ class LocalCache implements CacheInterface
 
     private function executeCmd(string $method, array $parameters = [])
     {
-        if ($this->currentDb === self::REDIS_DB_INDEX_INVALID
-            || empty($this->instance[$this->currentDb])
-        ) {
+        if ($this->currentDb === self::REDIS_DB_INDEX_INVALID) {
             throw new \InvalidArgumentException('redis not initialized');
         }
 
@@ -452,6 +403,13 @@ class LocalCache implements CacheInterface
 
         for ($retry = 0; $retry < $this->maxRetry; $retry++) {
             try {
+                if (!isset($this->instance[$this->currentDb])) {
+                    $ret = $this->initialize($this->currentDb);
+                    if (empty($ret)) {
+                        continue;
+                    }
+                }
+
                 $ret = call_user_func(
                     [$this->instance[$this->currentDb], $method],
                     ...$parameters
@@ -476,8 +434,68 @@ class LocalCache implements CacheInterface
         return $ret;
     }
 
-    private function getYacKey($key)
+    private function yacGetKey(string $key)
     {
-        return "{$this->currentDb}_{$key}";
+        if (is_null($this->yac)
+            || empty($key)
+        ) {
+            return '';
+        }
+
+        $curkey = "{$this->currentDb}_{$key}";
+        if (strlen($curkey) > self::YAC_KEY_MAX_LENGTH) {
+            return '';
+        }
+
+        return $curkey;
+    }
+
+    private function yacSet(string $key, $value, int $ttl)
+    {
+        $yackey = $this->yacGetKey($key);
+        if (empty($yackey)) {
+            return;
+        }
+
+        if ($ttl <= 0) {
+            $this->yac->set($key, $value);
+        }
+
+        return $this->yac->set($key, $value, $ttl);
+    }
+
+    private function yacGet(string $key)
+    {
+        $yackey = $this->yacGetKey($key);
+        if (empty($yackey)) {
+            return;
+        }
+
+        return $this->yac->get($key);
+    }
+
+    private function yacDelete(string $key)
+    {
+        $yackey = $this->yacGetKey($key);
+        if (empty($yackey)) {
+            return;
+        }
+
+        return $this->yac->delete($key);
+    }
+
+    private function yacExpire(string $key, int $ttl)
+    {
+        $yackey = $this->yacGetKey($key);
+        if (empty($yackey)) {
+            return;
+        }
+
+        $v = $this->yac->get($key);
+        if (empty($v)) {
+            return;
+        }
+
+        return $this->yac->set($key, $v, $ttl);
     }
 }
