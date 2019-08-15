@@ -23,5 +23,8 @@
       "LocalCache\\": "src/",
       "Tests\\": "tests/"
     }
+  },
+  "scripts": {
+    "test": ["phpunit"]
   }
 }

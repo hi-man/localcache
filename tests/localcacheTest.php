@@ -101,6 +101,8 @@ final class LocalCacheTest extends TestCase
 
     public function testInvalidRedisHostException()
     {
+        $ret = null;
+
         try {
             $lc = new LocalCache(
                 '222.222.222.222',
@@ -113,10 +115,11 @@ final class LocalCacheTest extends TestCase
                 0
             );
             $lc->select(3);
+            $ret = $lc->get('somethingNotExists');
         } catch (\InvalidArgumentException $e) {
-            return $this->assertTrue(true);
+            return $this->assertTrue(false);
         }
 
-        return $this->assertTrue(false);
+        return $this->assertTrue($ret === null);
     }
 }

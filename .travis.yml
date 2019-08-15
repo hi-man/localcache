@@ -30,4 +30,4 @@ before_script:
   - if [ "$deps" != "low" ]; then composer install --prefer-dist; fi
 
 script:
-  - vendor/bin/phpunit
+  - composer test
