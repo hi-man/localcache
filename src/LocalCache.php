@@ -162,7 +162,7 @@ class LocalCache implements CacheInterface
         }
 
         $ret = $this->executeCmd('get', [$key]);
-        $this->yac->set(
+        $this->yacSet(
             $key,
             empty($ret) ? self::NO_DATA_IN_CACHE : $ret,
             $this->localCacheTimeout
@@ -201,11 +201,13 @@ class LocalCache implements CacheInterface
      */
     public function set($key, $value, $ttl = null)
     {
-        if (empty($key) || empty($value)) {
+        if (empty($key)) {
             throw new \InvalidArgumentException(
                 "invalid parameters, key:{$key}, value:{$value}"
             );
         }
+
+        empty($value) && ($value = self::NO_DATA_IN_CACHE);
 
         $this->yacDelete($key);
 
@@ -491,11 +493,11 @@ class LocalCache implements CacheInterface
             return;
         }
 
-        $v = $this->yac->get($key);
+        $v = $this->yac->get($yackey);
         if (empty($v)) {
             return;
         }
 
-        return $this->yac->set($key, $v, $ttl);
+        return $this->yac->set($yackey, $v, $ttl);
     }
 }
