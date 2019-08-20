@@ -78,4 +78,15 @@ abstract class CacheService
             $this->prefix . $key
         );
     }
+
+    public function __call(string $name, array $arguments)
+    {
+        $instance = CachePoolService::getCacheInstance($this->connection);
+        if (empty($instance)) {
+            return false;
+        }
+
+        $instance->select($this->db);
+        return call_user_func([$instance, $name], ...$arguments);
+    }
 }
