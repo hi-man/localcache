@@ -1,6 +1,11 @@
 # Release Notes
 
-## v0.0.2 (2019-08-15)
+## v0.0.3 (2019-08-20)
+
+- add: support all redis commands
+- fix: use the right yac key with prefix
+
+## ~v0.0.2 (2019-08-15)~
 
 - add: `CachePoolService` a cache pool identified by redis connection name
 - add: `CacheService` a cache abstract class use cache pool more productive
