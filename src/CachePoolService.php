@@ -10,7 +10,9 @@ class CachePoolService
      *      'default' => $LocalCacheInstance
      * ]
      */
-    private static $instance = [];
+    private static $instanceHasCache = [];
+
+    private static $instanceNoCache = [];
 
     /**
      * get LocalCache Instance
@@ -23,46 +25,72 @@ class CachePoolService
      *                      'readTimeout' => 'int, default value is 3',
      *                      'maxRetry' => 'int, default value is 3',
      *                      'reserved' => 'int, default value is 0',
-     * @param bool $useLocalCache set to false will disable locale cache
+     * @param bool $useLocalecache set to false will disable locale cache
      * @param string $connection redis connection name
      */
     public static function initCacheInstance(
         array $config,
-        bool $useLocalCache = false,
+        bool $useLocalecache = false,
         string $connection = 'default'
     ) {
-        if (isset(self::$instance[$connection])) {
-            return self::$instance[$connection];
-        }
-
         if (empty($config['host'])) {
             throw \InvalidArgumentException('unknown host');
         }
 
-        self::$instance[$connection] = new LocalCache(
+        if ($useLocalecache) {
+            if (isset(self::$instanceHasCache[$connection])) {
+                return self::$instanceHasCache[$connection];
+            }
+
+            self::$instanceHasCache[$connection] = new LocalCache(
+                $config['host'],
+                $connection,
+                $config['port'] ?? 6379,
+                $config['timeout'] ?? 3,
+                $config['retryInterval'] ?? 500000,
+                $config['readTimeout'] ?? 3,
+                $config['maxRetry'] ?? 3,
+                $config['reserved'] ?? 0
+            );
+
+            return self::$instanceHasCache[$connection];
+        }
+
+        if (isset(self::$instanceNoCache[$connection])) {
+            return self::$instanceNoCache[$connection];
+        }
+
+        self::$instanceNoCache[$connection] = new LocalCache(
             $config['host'],
-            $useLocalCache ? $connection : '',
+            '',
             $config['port'] ?? 6379,
-            $config['connectTimeout'] ?? 3,
+            $config['timeout'] ?? 3,
             $config['retryInterval'] ?? 500000,
             $config['readTimeout'] ?? 3,
             $config['maxRetry'] ?? 3,
             $config['reserved'] ?? 0
         );
 
-        return self::$instance[$connection];
+        return self::$instanceNoCache[$connection];
     }
 
     /**
      * get cache instance by connection identifier
      *
      * @param string $connection redis connection identifier
+     * @param bool $useLocalecache set true to use local cache
      *
      * @return null|object return LocalCache instance
      */
-    public static function getCacheInstance(string $connection = 'default')
-    {
-        return self::$instance[$connection] ?? null;
+    public static function getCacheInstance(
+        string $connection = 'default',
+        bool $useLocalecache = true
+    ) {
+        if ($useLocalecache) {
+            return self::$instanceHasCache[$connection] ?? null;
+        }
+
+        return self::$instanceNoCache[$connection] ?? null;
     }
 
     /**
@@ -81,10 +109,11 @@ class CachePoolService
         int $db,
         string $key,
         $value,
-        int $ttl = 0
+        int $ttl = 0,
+        bool $useLocalecache = true
     ) {
         try {
-            $rds = self::getCacheInstance($connection);
+            $rds = self::getCacheInstance($connection, $useLocalecache);
             if (empty($rds)) {
                 return false;
             }
@@ -102,10 +131,11 @@ class CachePoolService
         string $connection,
         int $db,
         string $key,
-        $defaultValue = null
+        $defaultValue = null,
+        bool $useLocalecache = true
     ) {
         try {
-            $rds = self::getCacheInstance($connection);
+            $rds = self::getCacheInstance($connection, $useLocalecache);
             if (empty($rds)) {
                 return false;
             }
@@ -122,10 +152,11 @@ class CachePoolService
     public static function deleteByKey(
         string $connection,
         int $db,
-        string $key
+        string $key,
+        bool $useLocalecache = true
     ) {
         try {
-            $rds = self::getCacheInstance($connection);
+            $rds = self::getCacheInstance($connection, $useLocalecache);
             if (empty($rds)) {
                 return false;
             }

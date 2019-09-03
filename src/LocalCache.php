@@ -87,7 +87,7 @@ class LocalCache implements CacheInterface
             throw new \InvalidArgumentException('phpredis extension not installed');
         }
 
-        if (!extension_loaded('yac')) {
+        if (!empty($yacPrefix) && !extension_loaded('yac')) {
             throw new \InvalidArgumentException('yac extension not installed');
         }
 
@@ -363,34 +363,27 @@ class LocalCache implements CacheInterface
             $rds = new \Redis();
         }
 
-        for ($retry = 0; $retry < $this->maxRetry; $retry++) {
-            try {
-                $ret = $rds->connect(
-                    $this->host,
-                    $this->port,
-                    $this->connTimeout,
-                    $this->reserved,
-                    $this->retryInterval,
-                    $this->readTimeout
-                );
-            } catch (\RedisException $e) {
-                if ($this->retryInterval > 0) {
-                    usleep($this->retryInterval);
-                }
-
-                continue;
+        try {
+            $ret = $rds->connect(
+                $this->host,
+                $this->port,
+                $this->connTimeout,
+                $this->reserved,
+                $this->retryInterval,
+                $this->readTimeout
+            );
+        } catch (\RedisException $e) {
+            if ($this->retryInterval > 0) {
+                usleep($this->retryInterval);
             }
 
-            break;
-        }
-        if (empty($ret)) {
-            return false;
+            unset($rds);
+            throw $e;
         }
 
         $rds->select($dbIndex);
         !$isReconnect && ($this->instance[$dbIndex] = $rds);
 
-        unset($rds);
         return true;
     }
 
@@ -404,6 +397,7 @@ class LocalCache implements CacheInterface
         $ret = false;
 
         for ($retry = 0; $retry < $this->maxRetry; $retry++) {
+            $exception = null;
             try {
                 if (!isset($this->instance[$this->currentDb])) {
                     $ret = $this->initialize($this->currentDb);
@@ -460,10 +454,10 @@ class LocalCache implements CacheInterface
         }
 
         if ($ttl <= 0) {
-            $this->yac->set($key, $value);
+            $this->yac->set($yackey, $value);
         }
 
-        return $this->yac->set($key, $value, $ttl);
+        return $this->yac->set($yackey, $value, $ttl);
     }
 
     private function yacGet(string $key)
@@ -473,7 +467,7 @@ class LocalCache implements CacheInterface
             return;
         }
 
-        return $this->yac->get($key);
+        return $this->yac->get($yackey);
     }
 
     private function yacDelete(string $key)
@@ -483,7 +477,7 @@ class LocalCache implements CacheInterface
             return;
         }
 
-        return $this->yac->delete($key);
+        return $this->yac->delete($yackey);
     }
 
     private function yacExpire(string $key, int $ttl)
