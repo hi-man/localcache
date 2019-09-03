@@ -116,10 +116,10 @@ final class LocalCacheTest extends TestCase
             );
             $lc->select(3);
             $ret = $lc->get('somethingNotExists');
-        } catch (\InvalidArgumentException $e) {
-            return $this->assertTrue(false);
+        } catch (\RedisException $e) {
+            return $this->assertTrue(true);
         }
 
-        return $this->assertTrue($ret === null);
+        return $this->assertTrue(false);
     }
 }
