@@ -1,6 +1,11 @@
 # Release Notes
 
-## v0.0.3 (2019-08-20)
+## v0.0.4(2019-09-03)
+
+- support exception function
+- support pool with or without yac
+
+## ~v0.0.3 (2019-08-20)~
 
 - add: support all redis commands
 - fix: use the right yac key with prefix
