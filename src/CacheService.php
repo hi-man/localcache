@@ -9,14 +9,14 @@ abstract class CacheService
     protected $prefix = '';
 
     /**
+     * default database index is 0
+     */
+    protected $db = 0;
+
+    /**
      * redis configuration name
      */
     protected $connection = 'default';
-
-    /**
-     * redis key prefix length
-     */
-    protected $keyLenConsumed;
 
     /**
      * set false to disable localcache
@@ -30,7 +30,6 @@ abstract class CacheService
             $this->useLocalCache,
             $this->connection
         );
-        $this->keyLenConsumed = strlen($this->connection);
     }
 
     /**
