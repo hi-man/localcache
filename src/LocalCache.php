@@ -71,6 +71,12 @@ class LocalCache implements CacheInterface
     private $localCacheTimeout = 60;
 
     /**
+     * max length of key
+     * if key length >= maxKeyLength, will not be cached
+     */
+    private $maxKeyLength = self::YAC_KEY_MAX_LENGTH;
+
+    /**
      * initialize
      */
     public function __construct(
@@ -91,12 +97,13 @@ class LocalCache implements CacheInterface
             throw new \InvalidArgumentException('yac extension not installed');
         }
 
+        $yacKeyPrefixLength = strlen($yacPrefix);
         if (empty($host)
             || $port < 0
             || $connTimeout < 0
             || $retryInterval < 0
             || $readTimeout < 0
-            || strlen($yacPrefix) > self::YAC_KEY_MAX_LENGTH
+            || $yacKeyPrefixLength > self::YAC_KEY_MAX_LENGTH
         ) {
             throw new \InvalidArgumentException('invalid parameter');
         }
@@ -109,7 +116,10 @@ class LocalCache implements CacheInterface
         $this->reserved = $retryInterval > 0 ? null : $reserved;
         $this->maxRetry = $maxRetry + 1;
 
-        !empty($yacPrefix) && ($this->yac = new \Yac($yacPrefix));
+        if ($yacKeyPrefixLength > 0) {
+            $this->yac = new \Yac($yacPrefix);
+            $this->maxKeyLength = self::YAC_KEY_MAX_LENGTH - $yacKeyPrefixLength;
+        }
     }
 
     public function __destruct()
@@ -157,18 +167,18 @@ class LocalCache implements CacheInterface
         }
 
         $ret = $this->yacGet($key);
-        if (!empty($ret)) {
+        if ($ret !== false) {
             return ($ret === self::NO_DATA_IN_CACHE) ? $default : $ret;
         }
 
         $ret = $this->executeCmd('get', [$key]);
         $this->yacSet(
             $key,
-            empty($ret) ? self::NO_DATA_IN_CACHE : $ret,
+            ($ret === false) ? self::NO_DATA_IN_CACHE : $ret,
             $this->localCacheTimeout
         );
 
-        return $ret ?: $default;
+        return ($ret === false) ? $default : $ret;
     }
 
     public function setLocalCacheTimeout(int $timeout)
@@ -439,18 +449,14 @@ class LocalCache implements CacheInterface
         }
 
         $curkey = "{$this->currentDb}_{$key}";
-        if (strlen($curkey) > self::YAC_KEY_MAX_LENGTH) {
-            return '';
-        }
-
-        return $curkey;
+        return (strlen($curkey) > $this->maxKeyLength) ? md5($curkey) : $curkey;
     }
 
     private function yacSet(string $key, $value, int $ttl)
     {
         $yackey = $this->yacGetKey($key);
         if (empty($yackey)) {
-            return;
+            return false;
         }
 
         if ($ttl <= 0) {
@@ -464,7 +470,7 @@ class LocalCache implements CacheInterface
     {
         $yackey = $this->yacGetKey($key);
         if (empty($yackey)) {
-            return;
+            return false;
         }
 
         return $this->yac->get($yackey);
