@@ -1,5 +1,10 @@
 # Release Notes
 
+## v0.0.5(2019-09-07)
+
+- support key length greater than 48
+- initialize default connection and database index
+
 ## v0.0.4(2019-09-03)
 
 - support exception function
