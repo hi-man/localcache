@@ -17,6 +17,8 @@ thanks to [phpredis](https://github.com/phpredis/phpredis) and [yac](https://git
 
 <!-- vim-markdown-toc GFM -->
 
+* [Feature](#feature)
+* [Usage](#usage)
 * [Requirement](#requirement)
 * [Install](#install)
 * [testing](#testing)
@@ -29,6 +31,7 @@ thanks to [phpredis](https://github.com/phpredis/phpredis) and [yac](https://git
         * [deleteByKey](#deletebykey)
     * [CacheService](#cacheservice)
         * [getConfigByConnection](#getconfigbyconnection)
+        * [logException](#logexception)
         * [setCacheValue](#setcachevalue-1)
         * [getCacheValue](#getcachevalue-1)
         * [deleteByKey](#deletebykey-1)
@@ -44,6 +47,20 @@ thanks to [phpredis](https://github.com/phpredis/phpredis) and [yac](https://git
         * [getLocalCacheTimeout](#getlocalcachetimeout)
 
 <!-- vim-markdown-toc -->
+
+# Feature
+
+- [x] a redis client with retry mechanism
+- [x] reduce redis requests by caching data in memory
+- [x] support redis connection pool
+- [x] more graceful exception handler
+- [x] disable cache on demands
+
+# Usage
+
+1. extend class `CacheService` (recommend)
+2. use static funcitons in `CachePoolService`
+3. use `LocalCache` class directly
 
 # Requirement
 
@@ -66,6 +83,8 @@ composer test
 # Classes
 
 ## CachePoolService
+
+---
 
 pool of `LocalCache`, can be called statically
 
@@ -91,11 +110,17 @@ delete from cache by key
 
 ## CacheService
 
+---
+
 abstract class to use CachePoolService more productive
 
 ### getConfigByConnection
 
-get redis configuration by connection identifier
+**MUST implemented** get redis configuration by connection identifier
+
+### logException
+
+**MUST implemented** exception handler
 
 ### setCacheValue
 
@@ -110,6 +135,8 @@ wrapper of `CachePoolService::getCacheValue`
 wrapper of `CachePoolService::deleteByKey`
 
 ## LocalCache
+
+---
 
 provide a local cache between application and redis server
 
