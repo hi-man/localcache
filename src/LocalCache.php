@@ -178,7 +178,7 @@ class LocalCache implements CacheInterface
             $this->localCacheTimeout
         );
 
-        return ($ret === false) ? $default : $ret;
+        return $ret;
     }
 
     public function setLocalCacheTimeout(int $timeout)
