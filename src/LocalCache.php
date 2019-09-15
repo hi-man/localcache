@@ -217,9 +217,11 @@ class LocalCache implements CacheInterface
             );
         }
 
-        empty($value) && ($value = self::NO_DATA_IN_CACHE);
-
         $this->yacDelete($key);
+        if ($value === false) {
+            $this->yacSet($key, self::NO_DATA_IN_CACHE, intval($ttl));
+            return true;
+        }
 
         $ret = false;
         if (is_null($ttl) || $ttl <= 0) {
