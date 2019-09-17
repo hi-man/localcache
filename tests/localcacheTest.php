@@ -29,7 +29,7 @@ final class LocalCacheTest extends TestCase
         $this->localcache->clear();
 
         $ret = $this->localcache->get('key_doest_not_exists', $value);
-        $this->assertTrue($ret === $value);
+        $this->assertTrue($ret === false);
     }
 
     public function testGetValueWithExpiretime()
@@ -44,14 +44,14 @@ final class LocalCacheTest extends TestCase
         $this->localcache->set($key, $value, $ttl);
         sleep($ttl + 1);
         $ret = $this->localcache->get($key);
-        $this->assertTrue($ret === null);
+        $this->assertTrue($ret === false);
 
         $this->localcache->set($key, $value, $ttl);
         $ret = $this->localcache->get($key);
         $this->assertTrue($ret === $value);
         sleep($ttl + 1);
         $ret = $this->localcache->get($key);
-        $this->assertTrue($ret === null);
+        $this->assertTrue($ret === false);
     }
 
     public function testGetValueWithoutExpiretime()
@@ -80,7 +80,7 @@ final class LocalCacheTest extends TestCase
         $this->assertTrue($ret === $value);
         $this->localcache->delete($key);
         $ret = $this->localcache->get($key);
-        $this->assertTrue($ret === null);
+        $this->assertTrue($ret === false);
     }
 
     public function testClear()
@@ -96,7 +96,7 @@ final class LocalCacheTest extends TestCase
         $this->assertTrue($ret === $value);
         $this->localcache->clear();
         $ret = $this->localcache->get($key);
-        $this->assertTrue($ret === null);
+        $this->assertTrue($ret === false);
     }
 
     public function testInvalidRedisHostException()

@@ -104,7 +104,7 @@ final class CacheServiceTest extends TestCase
 
         sleep($ttl + 1);
         $ret = $this->cacheWithLocal->getCacheValue($key);
-        $this->assertTrue($ret === null);
+        $this->assertTrue($ret === false);
 
         $ret = $this->cacheWithLocal->getCacheValue($key, $defaultValue);
         $this->assertTrue($ret === $defaultValue);
@@ -139,10 +139,10 @@ final class CacheServiceTest extends TestCase
 
         sleep($ttl + 1);
         $ret = $this->cacheWithoutLocal->getCacheValue($key);
-        $this->assertTrue($ret === null);
+        $this->assertTrue($ret === false);
 
         $ret = $this->cacheWithoutLocal->getCacheValue($key, $defaultValue);
-        $this->assertTrue($ret === $defaultValue);
+        $this->assertTrue($ret === false);
 
         $ret = $this->yac->get($this->getYacKey($key));
         $this->assertTrue(
@@ -161,7 +161,7 @@ final class CacheServiceTest extends TestCase
 
         $this->cacheWithLocal->deleteByKey($key);
         $ret = $this->cacheWithoutLocal->getCacheValue($key);
-        $this->assertTrue($ret === null);
+        $this->assertTrue($ret === false);
         $ret = $this->yac->get($this->getYacKey($key));
         $this->assertTrue($ret === false);
     }
@@ -177,7 +177,7 @@ final class CacheServiceTest extends TestCase
 
         $this->cacheWithoutLocal->deleteByKey($key);
         $ret = $this->cacheWithoutLocal->getCacheValue($key);
-        $this->assertTrue($ret === null);
+        $this->assertTrue($ret === false);
         $ret = $this->yac->get($this->getYacKey($key));
         $this->assertTrue($ret === false);
     }
