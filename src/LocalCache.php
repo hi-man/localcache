@@ -113,7 +113,7 @@ class LocalCache implements CacheInterface
         $this->connTimeout = $connTimeout;
         $this->retryInterval = $retryInterval;
         $this->readTimeout = $readTimeout;
-        $this->reserved = $retryInterval > 0 ? null : $reserved;
+        $this->reserved = ($retryInterval > 0) ? null : $reserved;
         $this->maxRetry = $maxRetry + 1;
 
         if ($yacKeyPrefixLength > 0) {
@@ -361,18 +361,14 @@ class LocalCache implements CacheInterface
         return $this->executeCmd($name, $arguments);
     }
 
-    private function initialize(int $dbIndex, bool $isReconnect = false)
+    private function initialize(int $dbIndex)
     {
         $rds = null;
 
-        if ($isReconnect) {
-            if (empty($this->instance[$dbIndex])) {
-                return false;
-            }
-
-            $rds = &$this->instance[$dbIndex];
-        } else {
+        if (empty($this->instance[$dbIndex])) {
             $rds = new \Redis();
+        } else {
+            $rds = &$this->instance[$dbIndex];
         }
 
         try {
@@ -394,7 +390,7 @@ class LocalCache implements CacheInterface
         }
 
         $rds->select($dbIndex);
-        !$isReconnect && ($this->instance[$dbIndex] = $rds);
+        $this->instance[$dbIndex] = $rds;
 
         return true;
     }
@@ -423,12 +419,16 @@ class LocalCache implements CacheInterface
                     ...$parameters
                 );
             } catch (\RedisException $e) {
+                if (!empty($this->instance[$this->currentDb])) {
+                    $this->instance[$this->currentDb]->close();
+                    unset($this->instance[$this->currentDb]);
+                }
+
                 if ($this->retryInterval > 0) {
                     usleep($this->retryInterval);
                 }
 
                 $exception = $e;
-                $ret = $this->initialize($this->currentDb, true);
                 continue;
             }
 
