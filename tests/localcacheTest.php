@@ -20,6 +20,8 @@ final class LocalCacheTest extends TestCase
             3,
             0
         );
+
+        $this->localcache->setLocalCacheTimeout(3);
     }
 
     public function testGetDefaultValue()
@@ -97,6 +99,189 @@ final class LocalCacheTest extends TestCase
         $this->localcache->clear();
         $ret = $this->localcache->get($key);
         $this->assertTrue($ret === false);
+    }
+
+    public function testHashSingle()
+    {
+        $this->localcache->select(3);
+        $this->localcache->clear();
+
+        $key = 'hashkey';
+        $fieldkey = 'fieldkey';
+        $value = 'value';
+
+        $ret = $this->localcache->hSet($key, $fieldkey, $value);
+        $this->assertTrue($ret !== false);
+        $ret = $this->localcache->hGet($key, $fieldkey);
+        $this->assertTrue($ret === $value);
+
+        sleep($this->localcache->getLocalCacheTimeout() + 1);
+        $ret = $this->localcache->hGet($key, $fieldkey);
+        $this->assertTrue($ret === $value);
+        $ret = $this->localcache->hGet($key, $fieldkey);
+        $this->assertTrue($ret === $value);
+    }
+
+    public function testHashMultiple()
+    {
+        $this->localcache->select(3);
+        $this->localcache->clear();
+
+        $key = 'hashkeymulti';
+        $fieldkeyA = 'fieldkeyA';
+        $valueA = 'valueA';
+        $fieldkeyB = 'fieldkeyB';
+        $valueB = 'valueB';
+        $fieldkeyC = 'fieldkeyC';
+
+        $ret = $this->localcache->hMSet(
+            $key,
+            [
+                $fieldkeyA => $valueA,
+                $fieldkeyB => $valueB,
+            ]
+        );
+        $this->assertTrue($ret !== false);
+
+        $ret = $this->localcache->hMGet(
+            $key,
+            [
+                $fieldkeyA,
+                $fieldkeyB,
+            ]
+        );
+        $this->assertTrue(
+            !empty($ret)
+            && ($ret[$fieldkeyA] === $valueA)
+            && ($ret[$fieldkeyB] === $valueB)
+        );
+
+        $ret = $this->localcache->hMGet(
+            $key,
+            [
+                $fieldkeyA,
+                $fieldkeyB,
+                $fieldkeyC,
+            ]
+        );
+        $this->assertTrue(
+            !empty($ret)
+            && ($ret[$fieldkeyA] === $valueA)
+            && ($ret[$fieldkeyB] === $valueB)
+            && empty($ret[$fieldkeyC])
+        );
+
+        sleep($this->localcache->getLocalCacheTimeout() + 1);
+
+        $ret = $this->localcache->hMGet(
+            $key,
+            [
+                $fieldkeyA,
+                $fieldkeyB,
+            ]
+        );
+        $this->assertTrue(
+            !empty($ret)
+            && ($ret[$fieldkeyA] === $valueA)
+            && ($ret[$fieldkeyB] === $valueB)
+        );
+
+        $ret = $this->localcache->hMGet(
+            $key,
+            [
+                $fieldkeyA,
+                $fieldkeyB,
+            ]
+        );
+        $this->assertTrue(
+            !empty($ret)
+            && ($ret[$fieldkeyA] === $valueA)
+            && ($ret[$fieldkeyB] === $valueB)
+        );
+
+        $ret = $this->localcache->hMGet(
+            $key,
+            [
+                $fieldkeyA,
+                $fieldkeyB,
+                $fieldkeyC,
+            ]
+        );
+        $this->assertTrue(
+            !empty($ret)
+            && ($ret[$fieldkeyA] === $valueA)
+            && ($ret[$fieldkeyB] === $valueB)
+            && empty($ret[$fieldkeyC])
+        );
+    }
+
+    public function testHashGetAll()
+    {
+        $this->localcache->select(3);
+        $this->localcache->clear();
+
+        $key = 'hashkeygetall';
+        $fieldkeyA = 'fieldkeyA';
+        $valueA = 'valueA';
+        $fieldkeyB = 'fieldkeyB';
+        $valueB = 'valueB';
+        $fieldkeyC = 'fieldkeyC';
+        $valueC = 'valueC';
+
+        $ret = $this->localcache->hMSet(
+            $key,
+            [
+                $fieldkeyA => $valueA,
+                $fieldkeyB => $valueB,
+                $fieldkeyC => $valueC,
+            ]
+        );
+        $this->assertTrue($ret !== false);
+
+        $ret = $this->localcache->hGetAll($key);
+        $this->assertTrue(
+            !empty($ret)
+            && !empty($ret[$fieldkeyA]) && $ret[$fieldkeyA] === $valueA
+            && !empty($ret[$fieldkeyB]) && $ret[$fieldkeyB] === $valueB
+            && !empty($ret[$fieldkeyC]) && $ret[$fieldkeyC] === $valueC
+        );
+
+        $ret = $this->localcache->hGet($key, $fieldkeyA);
+        $this->assertTrue($ret === $valueA);
+    }
+
+    public function testHashDel()
+    {
+        $this->localcache->select(3);
+        $this->localcache->clear();
+
+        $key = 'hashkeydel';
+        $fieldkeyA = 'fieldkeyA';
+        $valueA = 'valueA';
+        $fieldkeyB = 'fieldkeyB';
+        $valueB = 'valueB';
+        $fieldkeyC = 'fieldkeyC';
+        $valueC = 'valueC';
+
+        $ret = $this->localcache->hMSet(
+            $key,
+            [
+                $fieldkeyA => $valueA,
+                $fieldkeyB => $valueB,
+                $fieldkeyC => $valueC,
+            ]
+        );
+        $this->assertTrue($ret !== false);
+
+        $ret = $this->localcache->hDel($key, $fieldkeyA, $fieldkeyB);
+        $this->assertTrue(!empty($ret));
+
+        $ret = $this->localcache->hGet($key, $fieldkeyA);
+        $this->assertTrue(empty($ret));
+        $ret = $this->localcache->hGet($key, $fieldkeyB);
+        $this->assertTrue(empty($ret));
+        $ret = $this->localcache->hGet($key, $fieldkeyC);
+        $this->assertTrue($ret === $valueC);
     }
 
     public function testInvalidRedisHostException()

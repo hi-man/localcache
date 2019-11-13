@@ -43,6 +43,7 @@ thanks to [phpredis](https://github.com/phpredis/phpredis) and [yac](https://git
         * [delete](#delete)
         * [expire](#expire)
         * [clear](#clear)
+        * [hDel / hGetAll / hMSet / hMGet / hSet / hGet](#hdel--hgetall--hmset--hmget--hset--hget)
         * [setLocalCacheTimeout](#setlocalcachetimeout)
         * [getLocalCacheTimeout](#getlocalcachetimeout)
 
@@ -223,6 +224,10 @@ the same as redis command `flushdb`, but flush **all** yac cache
 $lc->clear();
 
 ```
+
+### hDel / hGetAll / hMSet / hMGet / hSet / hGet
+
+the same as redis command
 
 ### setLocalCacheTimeout
 

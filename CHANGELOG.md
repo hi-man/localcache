@@ -1,5 +1,9 @@
 # Release Notes
 
+## v0.0.6(2019-11-13)
+
+- support hDel / hGetAll / hMSet / hMGet / hSet / hGet
+
 ## v0.0.5(2019-09-07)
 
 - support key length greater than 48

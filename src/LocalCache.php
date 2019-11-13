@@ -131,6 +131,166 @@ class LocalCache implements CacheInterface
         }
     }
 
+    /**
+     * @param string $key redis key
+     * @param string ...$fields variable length hash field list
+     *
+     * @return bool | integer
+     *
+     * @see phpredis::hDel
+     */
+    public function hDel(string $key, string ...$fields)
+    {
+        $this->yacDeleteHash($key, $fields);
+        array_unshift($fields, $key);
+        return $this->executeCmd('hDel', $fields);
+    }
+
+    /**
+     * @param string $key redis key
+     * @return array
+     *
+     * @see phpredis::hGetAll
+     */
+    public function hGetAll(string $key)
+    {
+        if (empty($key)) {
+            return [];
+        }
+
+        $ret = $this->executeCmd('hGetAll', [$key]);
+        if ($ret) {
+            $this->setHashValue($key, $ret);
+        }
+
+        return $ret;
+    }
+
+    /**
+     * @param string $key redis key
+     * @param array $value [ 'hash field key' => 'field value' ]
+     * @return bool true if success
+     *
+     * @see phpredis::hMSet
+     */
+    // phpcs:ignore
+    public function hMSet(string $key, array $value)
+    {
+        if (empty($value) || empty($key)) {
+            return false;
+        }
+
+        $ret = $this->executeCmd('hMSet', [$key, $value]);
+        if ($ret) {
+            $this->setHashValue($key, $value);
+        } else {
+            $this->yacDeleteHash($key, array_keys($value));
+        }
+
+        return true;
+    }
+
+    /**
+     * @param string $key redis key
+     * @param array $fields [ 'hash field1', 'hash memeber field2' ]
+     * @return array
+     *
+     * @see phpredis::hMGet
+     */
+    // phpcs:ignore
+    public function hMGet(string $key, array $fields)
+    {
+        if (empty($key) || empty($fields)) {
+            return [];
+        }
+
+        $rlt = [];
+        foreach ($fields as $k) {
+            $ret = $this->yacGet($this->getHashKey($key, $k));
+            if ($ret === false) {
+                $rlt = [];
+                break;
+            }
+
+            $rlt[$k] = $ret;
+        }
+
+        if (!empty($rlt)) {
+            return $rlt;
+        }
+
+        $ret = $this->executeCmd('hMGet', [$key, $fields]);
+        if ($ret !== false) {
+            $this->setHashValue($key, $ret);
+        } else {
+            $this->yacDeleteHash($key, $fields);
+        }
+
+        return $ret;
+    }
+
+    /**
+     * @param string $key redis key
+     * @param string $field hash field
+     * @param string $value hash value
+     * @return bool | integer
+     *
+     * @see phpredis::hSet
+     */
+    public function hSet(string $key, string $field, string $value)
+    {
+        if (empty($value) || empty($key) || empty($field)) {
+            return false;
+        }
+
+        $ret = $this->executeCmd('hSet', [$key, $field, $value]);
+        if ($ret !== false) {
+            $this->setHashValue(
+                $key,
+                [
+                    $field => $value,
+                ]
+            );
+        } else {
+            $this->yacDeleteHash($key, [$field]);
+        }
+
+        return $ret;
+    }
+
+    /**
+     * @param string $key redis key
+     * @param string $field hash field list
+     * @return bool | string
+     *
+     * @see phpredis::hGet
+     */
+    public function hGet(string $key, string $field)
+    {
+        if (empty($key) || empty($field)) {
+            return false;
+        }
+
+        $ret = $this->yacGet($this->getHashKey($key, $field));
+        if ($ret !== false) {
+            return $ret;
+        }
+
+        $ret = $this->executeCmd('hGet', [$key, $field]);
+        if ($ret !== false) {
+            $this->setHashValue(
+                $key,
+                [
+                    $field => $ret,
+                ]
+            );
+        } else {
+            $this->yacDeleteHash($key, [$field]);
+        }
+
+        return $ret;
+    }
+
     public function select(int $dbIndex)
     {
         if ($dbIndex < self::REDIS_DB_INDEX_MIN
@@ -158,6 +318,7 @@ class LocalCache implements CacheInterface
      *
      *   MUST be thrown if the $key string is not a legal value.
      */
+    // phpcs:ignore
     public function get($key, $default = null)
     {
         if (empty($key)) {
@@ -209,6 +370,7 @@ class LocalCache implements CacheInterface
      *
      * @throws \Psr\SimpleCache\InvalidArgumentException MUST be thrown if the $key string is not a legal value.
      */
+    // phpcs:ignore
     public function set($key, $value, $ttl = null)
     {
         if (empty($key)) {
@@ -243,6 +405,7 @@ class LocalCache implements CacheInterface
      *
      * @throws \Psr\SimpleCache\InvalidArgumentException MUST be thrown if the $key string is not a legal value.
      */
+    // phpcs:ignore
     public function delete($key)
     {
         if (empty($key)) {
@@ -347,6 +510,7 @@ class LocalCache implements CacheInterface
      *
      * @throws \Psr\SimpleCache\InvalidArgumentException MUST be thrown if the $key string is not a legal value.
      */
+    // phpcs:ignore
     public function has($key)
     {
         if (empty($key)) {
@@ -501,5 +665,28 @@ class LocalCache implements CacheInterface
         }
 
         return $this->yac->set($yackey, $v, $ttl);
+    }
+
+    private function getHashKey(string $key, string $field)
+    {
+        return 'hashkey:' . $key . $field;
+    }
+
+    private function setHashValue(string $key, array $value)
+    {
+        foreach ($value as $k => $v) {
+            $this->yacSet(
+                $this->getHashKey($key, $k),
+                $v,
+                $this->localCacheTimeout
+            );
+        }
+    }
+
+    private function yacDeleteHash(string $key, array $fields)
+    {
+        foreach ($fields as $k) {
+            $this->yacDelete($this->getHashKey($key, $k));
+        }
     }
 }
