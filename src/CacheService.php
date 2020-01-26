@@ -109,6 +109,26 @@ abstract class CacheService
 
     public function __call(string $name, array $arguments)
     {
+        $shouldAddPrefix = in_array(
+            strtolower($name),
+            [
+                'hdel',
+                'hgetall',
+                'hmset',
+                'hmget',
+                'hset',
+                'hget',
+                'expire',
+                'get',
+                'set',
+                'delete',
+            ],
+            true
+        );
+        if ($shouldAddPrefix) {
+            $arguments[0] = $this->prefix . $arguments[0];
+        }
+
         $instance = CachePoolService::getCacheInstance(
             $this->connection,
             $this->useLocalCache
