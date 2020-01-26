@@ -1,5 +1,11 @@
 # Release Notes
 
+## v0.0.7(2020-01-26)
+
+- add cache key prefix for commands:
+  hdel / hgetall / hmset / hmget / hset / hget / expire / get / set / delete
+- ignore yac fails in SET command
+
 ## v0.0.6(2019-11-13)
 
 - support hDel / hGetAll / hMSet / hMGet / hSet / hGet
