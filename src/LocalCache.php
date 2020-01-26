@@ -625,11 +625,17 @@ class LocalCache implements CacheInterface
             return false;
         }
 
-        if ($ttl <= 0) {
-            $this->yac->set($yackey, $value);
+        try {
+            if ($ttl <= 0) {
+                return $this->yac->set($yackey, $value);
+            }
+
+            return $this->yac->set($yackey, $value, $ttl);
+        } catch (\Exception $e) {
+            return false;
         }
 
-        return $this->yac->set($yackey, $value, $ttl);
+        return true;
     }
 
     private function yacGet(string $key)
