@@ -96,7 +96,7 @@ final class CacheServiceTest extends TestCase
         $ret = $this->cacheWithLocal->getCacheValue($key);
         $this->assertTrue($ret === $value);
 
-        $ret = $this->cacheWithLocal->get($this->getRedisKey($key));
+        $ret = $this->cacheWithLocal->get($key);
         $this->assertTrue($ret === $value);
 
         $ret = $this->yac->get($this->getYacKey($key));
@@ -128,7 +128,7 @@ final class CacheServiceTest extends TestCase
         $ret = $this->cacheWithoutLocal->getCacheValue($key);
         $this->assertTrue($ret === $value);
 
-        $ret = $this->cacheWithoutLocal->get($this->getRedisKey($key));
+        $ret = $this->cacheWithoutLocal->get($key);
         $this->assertTrue($ret === $value);
 
 
