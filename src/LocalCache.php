@@ -413,7 +413,13 @@ class LocalCache implements CacheInterface
         }
 
         $this->yacDelete($key);
-        return $this->executeCmd('delete', [$key]);
+
+        $ver = explode('.', phpversion('redis'));
+        if ($ver[0] < 4) {
+            return $this->executeCmd('delete', [$key]);
+        }
+
+        return $this->executeCmd('unlink', [$key]);
     }
 
     public function expire(string $key, int $seconds)

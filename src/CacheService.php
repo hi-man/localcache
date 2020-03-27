@@ -122,6 +122,8 @@ abstract class CacheService
                 'get',
                 'set',
                 'delete',
+                'del',
+                'unlink',
             ],
             true
         );
