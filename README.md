@@ -17,35 +17,35 @@ thanks to [phpredis](https://github.com/phpredis/phpredis) and [yac](https://git
 
 <!-- vim-markdown-toc GFM -->
 
-* [Feature](#feature)
-* [Usage](#usage)
-* [Requirement](#requirement)
-* [Install](#install)
-* [testing](#testing)
-* [Classes](#classes)
-    * [CachePoolService](#cachepoolservice)
-        * [initCacheInstance](#initcacheinstance)
-        * [getCacheInstance](#getcacheinstance)
-        * [setCacheValue](#setcachevalue)
-        * [getCacheValue](#getcachevalue)
-        * [deleteByKey](#deletebykey)
-    * [CacheService](#cacheservice)
-        * [getConfigByConnection](#getconfigbyconnection)
-        * [logException](#logexception)
-        * [setCacheValue](#setcachevalue-1)
-        * [getCacheValue](#getcachevalue-1)
-        * [deleteByKey](#deletebykey-1)
-    * [LocalCache](#localcache)
-        * [Construct](#construct)
-        * [select](#select)
-        * [get](#get)
-        * [set](#set)
-        * [delete](#delete)
-        * [expire](#expire)
-        * [clear](#clear)
-        * [hDel / hGetAll / hMSet / hMGet / hSet / hGet](#hdel--hgetall--hmset--hmget--hset--hget)
-        * [setLocalCacheTimeout](#setlocalcachetimeout)
-        * [getLocalCacheTimeout](#getlocalcachetimeout)
+- [Feature](#feature)
+- [Usage](#usage)
+- [Requirement](#requirement)
+- [Install](#install)
+- [testing](#testing)
+- [Classes](#classes)
+  - [CachePoolService](#cachepoolservice)
+    - [initCacheInstance](#initcacheinstance)
+    - [getCacheInstance](#getcacheinstance)
+    - [setCacheValue](#setcachevalue)
+    - [getCacheValue](#getcachevalue)
+    - [deleteByKey](#deletebykey)
+  - [CacheService](#cacheservice)
+    - [getConfigByConnection](#getconfigbyconnection)
+    - [logException](#logexception)
+    - [setCacheValue](#setcachevalue-1)
+    - [getCacheValue](#getcachevalue-1)
+    - [deleteByKey](#deletebykey-1)
+  - [LocalCache](#localcache)
+    - [Construct](#construct)
+    - [select](#select)
+    - [get](#get)
+    - [set](#set)
+    - [delete / unlink](#delete--unlink)
+    - [expire](#expire)
+    - [clear](#clear)
+    - [hDel / hGetAll / hMSet / hMGet / hSet / hGet](#hdel--hgetall--hmset--hmget--hset--hget)
+    - [setLocalCacheTimeout](#setlocalcachetimeout)
+    - [getLocalCacheTimeout](#getlocalcachetimeout)
 
 <!-- vim-markdown-toc -->
 
@@ -145,14 +145,14 @@ provide a local cache between application and redis server
 
 ```php
 $lc = new LocalCache(
-    '127.0.01',     /* redis host */
-    'Yac prefix',   /* yac prefix, empty prefix will disable yac, default value is empty, max length is 20 */
-    6379,           /* redis port, default value is 6379 */
-    3,              /* redis connection timeout, in seconds, default value is 3 */
-    500000,         /* redis retry interval, in microseconds, default value is 500000 */
-    3,              /* redis read timeout, default value is 3 */
-    3,              /* max retry, default value is 3 */
-    0               /* redis reserved, default value is 0 */
+  '127.0.01' /* redis host */,
+  'Yac prefix' /* yac prefix, empty prefix will disable yac, default value is empty, max length is 20 */,
+  6379 /* redis port, default value is 6379 */,
+  3 /* redis connection timeout, in seconds, default value is 3 */,
+  500000 /* redis retry interval, in microseconds, default value is 500000 */,
+  3 /* redis read timeout, default value is 3 */,
+  3 /* max retry, default value is 3 */,
+  0 /* redis reserved, default value is 0 */
 );
 ```
 
@@ -161,10 +161,7 @@ $lc = new LocalCache(
 the same as redis command `select`, but not really issue a command request.
 
 ```php
-$lc->select(
-    0 /* redis database index */
-);
-
+$lc->select(0 /* redis database index */);
 ```
 
 ### get
@@ -173,10 +170,9 @@ the same as redis command `get`, use yac cache value first, then issue a command
 
 ```php
 $lc->get(
-    'key',          /* redis item key */
-    'default value' /* default value if the key does not exists */
+  'key' /* redis item key */,
+  'default value' /* default value if the key does not exists */
 );
-
 ```
 
 ### set
@@ -193,15 +189,18 @@ $lc->set(
 
 ```
 
-### delete
+### delete / unlink
 
-the same as redis command `delete`, also delete yac cache
+the same as redis command `delete` or `unlink`, also delete yac cache
 
 ```php
 $lc->delete(
     'key',      /* redis item key */
 );
 
+$lc->unlink(
+    'key',      /* redis item key */
+);
 ```
 
 ### expire
@@ -209,11 +208,7 @@ $lc->delete(
 the same as redis command `expire`, also reset yac cache expire time
 
 ```php
-$lc->expire(
-    'key',      /* redis item key */
-    3           /* expire time in seconds */
-);
-
+$lc->expire('key' /* redis item key */, 3 /* expire time in seconds */);
 ```
 
 ### clear
@@ -222,7 +217,6 @@ the same as redis command `flushdb`, but flush **all** yac cache
 
 ```php
 $lc->clear();
-
 ```
 
 ### hDel / hGetAll / hMSet / hMGet / hSet / hGet
@@ -250,5 +244,4 @@ get yac cache timeout
 
 ```php
 $lc->getLocalCacheTimeout();
-
 ```

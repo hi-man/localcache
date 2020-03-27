@@ -1,5 +1,8 @@
 # Release Notes
 
+## v0.0.8(2020-03-27)
+- use unlink instead of delete
+
 ## v0.0.7(2020-01-26)
 
 - add cache key prefix for commands:
