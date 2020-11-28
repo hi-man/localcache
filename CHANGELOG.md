@@ -1,6 +1,11 @@
 # Release Notes
 
+## v0.0.9(2020-11-28)
+
+- yacDeleteHash is a public function now
+
 ## v0.0.8(2020-03-27)
+
 - use unlink instead of delete
 
 ## v0.0.7(2020-01-26)
