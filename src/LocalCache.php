@@ -695,7 +695,7 @@ class LocalCache implements CacheInterface
         }
     }
 
-    private function yacDeleteHash(string $key, array $fields)
+    public function yacDeleteHash(string $key, array $fields)
     {
         foreach ($fields as $k) {
             $this->yacDelete($this->getHashKey($key, $k));

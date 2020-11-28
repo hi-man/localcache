@@ -124,6 +124,7 @@ abstract class CacheService
                 'delete',
                 'del',
                 'unlink',
+                'yacdeletehash',
             ],
             true
         );
